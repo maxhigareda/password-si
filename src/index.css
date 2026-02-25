@@ -1,0 +1,62 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --bg-dark: #111b21;
+    --bg-surface: #202c33;
+    --bg-surface-hover: #2a3942;
+    --accent-green: #00a884;
+    --accent-green-hover: #008f6f;
+    --text-primary: #e9edef;
+    --text-secondary: #8696a0;
+    --border-color: #222d34;
+    --danger-red: #ef4444;
+  }
+
+  body {
+    @apply bg-[var(--bg-dark)] text-[var(--text-primary)] font-sans antialiased;
+    margin: 0;
+    padding: 0;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-[var(--accent-green)] hover:bg-[var(--accent-green-hover)] text-[var(--bg-dark)] font-semibold py-2 px-4 rounded-md transition-colors duration-200 flex items-center justify-center gap-2;
+  }
+
+  .btn-secondary {
+    @apply bg-[var(--bg-surface-hover)] hover:bg-[var(--border-color)] text-[var(--text-primary)] py-2 px-4 rounded-md transition-colors duration-200 flex items-center justify-center gap-2;
+  }
+
+  .btn-icon {
+    @apply text-[var(--text-secondary)] hover:text-[var(--text-primary)] p-2 rounded-full hover:bg-[var(--bg-surface-hover)] transition-colors duration-200;
+  }
+
+  .input-field {
+    @apply w-full bg-[var(--bg-surface)] border border-[var(--border-color)] text-[var(--text-primary)] rounded-md px-4 py-2 focus:outline-none focus:border-[var(--accent-green)] transition-colors duration-200 placeholder-[var(--text-secondary)];
+  }
+
+  .card {
+    @apply bg-[var(--bg-surface)] rounded-lg shadow-md border border-[var(--border-color)];
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.16);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.24);
+}

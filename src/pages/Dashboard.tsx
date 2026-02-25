@@ -1,0 +1,165 @@
+import { useState, useEffect } from 'react';
+import { Plus, Copy, Eye, EyeOff, KeyRound, ExternalLink, Trash2, Users } from 'lucide-react';
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
+import { CreateCredentialModal } from '../components/CreateCredentialModal';
+import { ShareCredentialModal } from '../components/ShareCredentialModal';
+
+interface Credential {
+    id: string; // uuid from DB
+    platform: string;
+    username: string;
+    password?: string;
+    url: string | null;
+}
+
+export function Dashboard() {
+    const { role } = useAuth();
+    const [credentials, setCredentials] = useState<Credential[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [visiblePasswords, setVisiblePasswords] = useState<Record<string, boolean>>({});
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [shareModalCredId, setShareModalCredId] = useState<string | null>(null);
+
+    const fetchCredentials = async () => {
+        setLoading(true);
+        // Gracias a RLS (Level Security), simplemente pedimos todas y supabase filtra
+        const { data, error } = await supabase
+            .from('credentials')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            console.error('Error fetching credentials:', error);
+        } else {
+            setCredentials(data || []);
+        }
+        setLoading(false);
+    };
+
+    useEffect(() => {
+        fetchCredentials();
+    }, []);
+
+    const togglePassword = (id: string) => {
+        setVisiblePasswords(prev => ({ ...prev, [id]: !prev[id] }));
+    };
+
+    const copyToClipboard = (text?: string) => {
+        if (text) navigator.clipboard.writeText(text);
+    };
+
+    const handleDelete = async (id: string) => {
+        if (!confirm('¿Estás seguro de que deseas eliminar esta credencial?')) return;
+
+        const { error } = await supabase.from('credentials').delete().eq('id', id);
+        if (error) {
+            alert('Error eliminando credencial');
+        } else {
+            fetchCredentials();
+        }
+    };
+
+    return (
+        <div className="space-y-6 max-w-6xl mx-auto">
+            <div className="flex justify-between items-center">
+                <div>
+                    <h1 className="text-2xl font-bold text-[var(--text-primary)]">Tus Contraseñas</h1>
+                    <p className="text-[var(--text-secondary)] mt-1">Gestiona de forma segura los accesos corporativos</p>
+                </div>
+                {role === 'admin' && (
+                    <button onClick={() => setIsCreateModalOpen(true)} className="btn-primary">
+                        <Plus className="w-5 h-5" />
+                        Nueva Credencial
+                    </button>
+                )}
+            </div>
+
+            <div className="card overflow-hidden">
+                <table className="w-full text-left border-collapse">
+                    <thead>
+                        <tr className="bg-[var(--bg-surface-hover)] border-b border-[var(--border-color)]">
+                            <th className="py-4 px-6 font-semibold text-[var(--text-secondary)]">Plataforma</th>
+                            <th className="py-4 px-6 font-semibold text-[var(--text-secondary)]">Usuario / Correo</th>
+                            <th className="py-4 px-6 font-semibold text-[var(--text-secondary)]">Contraseña</th>
+                            <th className="py-4 px-6 font-semibold text-[var(--text-secondary)] text-right">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {loading ? (
+                            <tr>
+                                <td colSpan={4} className="py-8 text-center text-[var(--text-secondary)]">Cargando credenciales...</td>
+                            </tr>
+                        ) : credentials.length === 0 ? (
+                            <tr>
+                                <td colSpan={4} className="py-8 text-center text-[var(--text-secondary)]">No hay credenciales guardadas</td>
+                            </tr>
+                        ) : (
+                            credentials.map(cred => (
+                                <tr key={cred.id} className="border-b border-[var(--border-color)] hover:bg-[var(--bg-surface-hover)] transition-colors group">
+                                    <td className="py-4 px-6">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-md bg-[var(--bg-dark)] flex items-center justify-center border border-[var(--border-color)] flex-shrink-0">
+                                                <KeyRound className="w-5 h-5 text-[var(--accent-green)]" />
+                                            </div>
+                                            <div className="min-w-0">
+                                                <span className="block font-medium text-[var(--text-primary)] truncate">{cred.platform}</span>
+                                                {cred.url && (
+                                                    <a href={cred.url} target="_blank" rel="noreferrer" className="text-xs text-[var(--text-secondary)] hover:text-[var(--accent-green)] flex items-center gap-1 mt-0.5 w-fit">
+                                                        <span className="truncate max-w-[150px] inline-block">{new URL(cred.url).hostname}</span>
+                                                        <ExternalLink className="w-3 h-3 flex-shrink-0" />
+                                                    </a>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td className="py-4 px-6 text-[var(--text-primary)] font-mono text-sm">{cred.username}</td>
+                                    <td className="py-4 px-6">
+                                        <div className="flex items-center gap-2">
+                                            <span className="font-mono tracking-widest text-[var(--text-primary)] bg-[var(--bg-dark)] px-3 py-1 rounded inline-block min-w-[120px] text-center select-none">
+                                                {visiblePasswords[cred.id] ? cred.password : '••••••••'}
+                                            </span>
+                                            <button onClick={() => togglePassword(cred.id)} className="btn-icon" title="Mostrar/Ocultar">
+                                                {visiblePasswords[cred.id] ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                            </button>
+                                        </div>
+                                    </td>
+                                    <td className="py-4 px-6 text-right">
+                                        <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <button onClick={() => copyToClipboard(cred.password)} className="btn-secondary text-sm">
+                                                <Copy className="w-4 h-4" />
+                                                Copiar
+                                            </button>
+                                            {role === 'admin' && (
+                                                <>
+                                                    <button onClick={() => setShareModalCredId(cred.id)} className="btn-icon" title="Compartir">
+                                                        <Users className="w-4 h-4" />
+                                                    </button>
+                                                    <button onClick={() => handleDelete(cred.id)} className="btn-icon !text-red-400 hover:!bg-red-400/10" title="Eliminar">
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </button>
+                                                </>
+                                            )}
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))
+                        )}
+                    </tbody>
+                </table>
+            </div>
+
+            <CreateCredentialModal
+                isOpen={isCreateModalOpen}
+                onClose={() => setIsCreateModalOpen(false)}
+                onSuccess={fetchCredentials}
+            />
+
+            <ShareCredentialModal
+                isOpen={!!shareModalCredId}
+                onClose={() => setShareModalCredId(null)}
+                credentialId={shareModalCredId}
+            />
+        </div>
+    );
+}
