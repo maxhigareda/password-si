@@ -12,9 +12,10 @@ interface Profile {
 }
 
 export function Users() {
-    const { role } = useAuth();
+    const { user: currentUser, role } = useAuth();
     const [users, setUsers] = useState<Profile[]>([]);
     const [loading, setLoading] = useState(true);
+    const [updatingId, setUpdatingId] = useState<string | null>(null);
 
     const fetchUsers = async () => {
         setLoading(true);
@@ -34,6 +35,37 @@ export function Users() {
     useEffect(() => {
         fetchUsers();
     }, []);
+
+    const toggleRole = async (targetUser: Profile) => {
+        if (targetUser.id === currentUser?.id) {
+            alert("No puedes cambiar tu propio rol por seguridad.");
+            return;
+        }
+
+        const newRole = targetUser.role === 'admin' ? 'viewer' : 'admin';
+        const confirmMessage = `¿Estás seguro de que deseas hacer a este usuario ${newRole.toUpperCase()}?`;
+
+        if (!confirm(confirmMessage)) return;
+
+        setUpdatingId(targetUser.id);
+
+        const { error } = await supabase.rpc('admin_update_user_role', {
+            target_id: targetUser.id,
+            new_role: newRole
+        });
+
+        if (error) {
+            console.error("Error updating role:", error);
+            alert("Error al cambiar el rol. Asegate de haber ejecutado el script SQL en Supabase.");
+        } else {
+            // Actualizar localmente la lista
+            setUsers(prev => prev.map(u =>
+                u.id === targetUser.id ? { ...u, role: newRole } : u
+            ));
+        }
+
+        setUpdatingId(null);
+    };
 
     // Seguridad extra: Si no es admin, no debería estar aquí
     if (role !== 'admin') {
@@ -79,13 +111,23 @@ export function Users() {
                                 </div>
                             </div>
 
-                            <div className="mt-auto pt-4 border-t border-[var(--border-color)] w-full">
+                            <div className="mt-auto pt-4 border-t border-[var(--border-color)] w-full flex items-center justify-between">
                                 <span className={`inline-block px-3 py-1 text-xs font-medium rounded-full ${user.role === 'admin'
                                     ? 'bg-[var(--accent-green)]/10 text-[var(--accent-green)] border border-[var(--accent-green)]/20'
                                     : 'bg-[var(--bg-dark)] text-[var(--text-secondary)] border border-[var(--border-color)]'
                                     }`}>
                                     Rol: {user.role.toUpperCase()}
                                 </span>
+
+                                {user.id !== currentUser?.id && (
+                                    <button
+                                        onClick={() => toggleRole(user)}
+                                        disabled={updatingId === user.id}
+                                        className="text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors underline disabled:opacity-50"
+                                    >
+                                        {updatingId === user.id ? 'Cambiando...' : `Hacer ${user.role === 'admin' ? 'Viewer' : 'Admin'}`}
+                                    </button>
+                                )}
                             </div>
                         </div>
                     ))

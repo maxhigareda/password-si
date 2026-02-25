@@ -1,16 +1,25 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { PasswordGenerator } from './PasswordGenerator';
 
+export interface CredentialData {
+    id: string;
+    platform: string;
+    username: string;
+    password?: string;
+    url: string | null;
+}
+
 interface CredentialModalProps {
     isOpen: boolean;
     onClose: () => void;
     onSuccess: () => void;
+    initialData?: CredentialData | null;
 }
 
-export function CreateCredentialModal({ isOpen, onClose, onSuccess }: CredentialModalProps) {
+export function CreateCredentialModal({ isOpen, onClose, onSuccess, initialData }: CredentialModalProps) {
     const { user } = useAuth();
     const [platform, setPlatform] = useState('');
     const [username, setUsername] = useState('');
@@ -18,6 +27,23 @@ export function CreateCredentialModal({ isOpen, onClose, onSuccess }: Credential
     const [url, setUrl] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+
+    useEffect(() => {
+        if (isOpen) {
+            if (initialData) {
+                setPlatform(initialData.platform || '');
+                setUsername(initialData.username || '');
+                setPassword(initialData.password || '');
+                setUrl(initialData.url || '');
+            } else {
+                setPlatform('');
+                setUsername('');
+                setPassword('');
+                setUrl('');
+            }
+            setError('');
+        }
+    }, [isOpen, initialData]);
 
     if (!isOpen) return null;
 
@@ -38,23 +64,39 @@ export function CreateCredentialModal({ isOpen, onClose, onSuccess }: Credential
         try {
             if (!user) throw new Error('Usuario no autenticado');
 
-            const { error: insertError } = await supabase
-                .from('credentials')
-                .insert([
-                    {
-                        owner_id: user.id,
+            if (initialData) {
+                // EDIT MODE
+                const { error: updateError } = await supabase
+                    .from('credentials')
+                    .update({
                         platform,
                         username,
                         password,
                         url: url || null,
-                    }
-                ]);
+                    })
+                    .eq('id', initialData.id);
 
-            if (insertError) throw insertError;
+                if (updateError) throw updateError;
+            } else {
+                // CREATE MODE
+                const { error: insertError } = await supabase
+                    .from('credentials')
+                    .insert([
+                        {
+                            owner_id: user.id,
+                            platform,
+                            username,
+                            password,
+                            url: url || null,
+                        }
+                    ]);
+
+                if (insertError) throw insertError;
+            }
 
             onSuccess();
             onClose();
-            // Limpiar formulario
+            // Limpiar formulario (se hace también en el useEffect, pero por convención)
             setPlatform('');
             setUsername('');
             setPassword('');
@@ -71,7 +113,9 @@ export function CreateCredentialModal({ isOpen, onClose, onSuccess }: Credential
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
             <div className="bg-[var(--bg-surface)] rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-[var(--border-color)] shadow-2xl">
                 <div className="flex justify-between items-center p-6 border-b border-[var(--border-color)] sticky top-0 bg-[var(--bg-surface)] z-10">
-                    <h2 className="text-xl font-semibold text-[var(--text-primary)]">Nueva Credencial</h2>
+                    <h2 className="text-xl font-semibold text-[var(--text-primary)]">
+                        {initialData ? 'Editar Credencial' : 'Nueva Credencial'}
+                    </h2>
                     <button onClick={onClose} className="btn-icon">
                         <X className="w-5 h-5" />
                     </button>

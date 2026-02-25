@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Copy, Eye, EyeOff, KeyRound, ExternalLink, Trash2, Users } from 'lucide-react';
+import { Plus, Copy, Eye, EyeOff, KeyRound, ExternalLink, Trash2, Users, Edit } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { CreateCredentialModal } from '../components/CreateCredentialModal';
@@ -19,7 +19,18 @@ export function Dashboard() {
     const [loading, setLoading] = useState(true);
     const [visiblePasswords, setVisiblePasswords] = useState<Record<string, boolean>>({});
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [editingCredential, setEditingCredential] = useState<Credential | null>(null);
     const [shareModalCredId, setShareModalCredId] = useState<string | null>(null);
+
+    const openCreateModal = () => {
+        setEditingCredential(null);
+        setIsCreateModalOpen(true);
+    };
+
+    const openEditModal = (cred: Credential) => {
+        setEditingCredential(cred);
+        setIsCreateModalOpen(true);
+    };
 
     const fetchCredentials = async () => {
         setLoading(true);
@@ -68,7 +79,7 @@ export function Dashboard() {
                     <p className="text-[var(--text-secondary)] mt-1">Gestiona de forma segura los accesos corporativos</p>
                 </div>
                 {role === 'admin' && (
-                    <button onClick={() => setIsCreateModalOpen(true)} className="btn-primary">
+                    <button onClick={openCreateModal} className="btn-primary">
                         <Plus className="w-5 h-5" />
                         Nueva Credencial
                     </button>
@@ -132,6 +143,9 @@ export function Dashboard() {
                                             </button>
                                             {role === 'admin' && (
                                                 <>
+                                                    <button onClick={() => openEditModal(cred)} className="btn-icon" title="Editar">
+                                                        <Edit className="w-4 h-4" />
+                                                    </button>
                                                     <button onClick={() => setShareModalCredId(cred.id)} className="btn-icon" title="Compartir">
                                                         <Users className="w-4 h-4" />
                                                     </button>
@@ -151,8 +165,12 @@ export function Dashboard() {
 
             <CreateCredentialModal
                 isOpen={isCreateModalOpen}
-                onClose={() => setIsCreateModalOpen(false)}
+                onClose={() => {
+                    setIsCreateModalOpen(false);
+                    setEditingCredential(null);
+                }}
                 onSuccess={fetchCredentials}
+                initialData={editingCredential}
             />
 
             <ShareCredentialModal
