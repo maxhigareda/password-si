@@ -19,6 +19,9 @@ export function Login() {
         try {
             console.log('Intentando operacion. isLogin:', isLogin);
             console.log('Email:', email);
+            console.log('>> VERIFICANDO VARIABLES VERCEL <<');
+            console.log('URL:', import.meta.env.VITE_SUPABASE_URL ? 'CONFIGURADA (OK)' : '¡FALTA / UNDEFINED!');
+            console.log('KEY:', import.meta.env.VITE_SUPABASE_ANON_KEY ? 'CONFIGURADA (OK)' : '¡FALTA / UNDEFINED!');
 
             if (isLogin) {
                 console.log('Llamando a supabase.auth.signInWithPassword...');
