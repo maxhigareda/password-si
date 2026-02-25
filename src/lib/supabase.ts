@@ -9,5 +9,19 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export const supabase = createClient(
   supabaseUrl || 'https://placeholder.supabase.co',
-  supabaseAnonKey || 'placeholder'
+  supabaseAnonKey || 'placeholder',
+  {
+    auth: {
+      // OVERRIDE: Desactivar por completo el navigator.locks del navegador
+      // Esto soluciona de raíz el bug global de Supabase (NavigatorLockAcquireTimeoutError de 10000ms)
+      // que causa bloqueos infinitos de sesión al recargar la página o volver de caché.
+      // @ts-expect-error Type interference issue with Supabase 2.97 options
+      lock: async (_name: string, acquire: () => Promise<any>) => {
+        // Ejecutar de forma síncrona/memoria sin trabar el Storage del navegador
+        return await acquire();
+      },
+      autoRefreshToken: true,
+      persistSession: true,
+    }
+  }
 );
