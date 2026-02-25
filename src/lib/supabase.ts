@@ -9,5 +9,14 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export const supabase = createClient(
   supabaseUrl || 'https://placeholder.supabase.co',
-  supabaseAnonKey || 'placeholder'
+  supabaseAnonKey || 'placeholder',
+  {
+    auth: {
+      lock: async (_name: string, _timeout: number, acquire: () => Promise<any>) => {
+        return await acquire();
+      },
+      autoRefreshToken: true,
+      persistSession: true,
+    }
+  }
 );
