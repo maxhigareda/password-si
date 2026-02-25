@@ -17,9 +17,17 @@ export function Login() {
         setLoading(true);
 
         try {
+            console.log('Intentando operacion. isLogin:', isLogin);
+            console.log('Email:', email);
+
             if (isLogin) {
-                const { error } = await supabase.auth.signInWithPassword({ email, password });
+                console.log('Llamando a supabase.auth.signInWithPassword...');
+                const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+                console.log('Respuesta de signInWithPassword:', { data, error });
+
                 if (error) throw error;
+
+                console.log('Navegando al dashboard...');
                 navigate('/dashboard');
             } else {
                 const { error } = await supabase.auth.signUp({ email, password });
@@ -32,8 +40,13 @@ export function Login() {
                 setIsLogin(true);
             }
         } catch (err: any) {
-            setError(err.message || 'Ocurrió un error en la autenticación.');
+            console.error('============== ERROR EN LOGIN/REGISTRO ==============', err);
+
+            // Construimos un string detallado del error para mostrarlo en pantalla
+            const devErrorDetails = JSON.stringify(err, Object.getOwnPropertyNames(err), 2);
+            setError(`Error: ${err.message || 'Desconocido'}. Detalles técnicos: ${devErrorDetails}`);
         } finally {
+            console.log('Finalizando proceso, apagando loading state...');
             setLoading(false);
         }
     };
