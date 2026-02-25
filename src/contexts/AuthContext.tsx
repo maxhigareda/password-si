@@ -30,19 +30,57 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     useEffect(() => {
         let isMounted = true;
 
+        const fetchSession = async () => {
+            try {
+                const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+                if (sessionError) throw sessionError;
+
+                if (session?.user) {
+                    let { data, error } = await supabase
+                        .from('profiles')
+                        .select('role')
+                        .eq('id', session.user.id)
+                        .single();
+
+                    if (error && error.code === 'PGRST116') {
+                        await new Promise(res => setTimeout(res, 1000));
+                        const retry = await supabase.from('profiles').select('role').eq('id', session.user.id).single();
+                        data = retry.data;
+                        error = retry.error;
+                    }
+
+                    if (!isMounted) return;
+
+                    if (error) {
+                        await supabase.auth.signOut();
+                        updateUserAndRole(null, null);
+                    } else {
+                        updateUserAndRole(session.user, data?.role || 'viewer');
+                    }
+                } else {
+                    if (isMounted) updateUserAndRole(null, null);
+                }
+            } catch (error) {
+                console.error("Error fetching initial session:", error);
+                if (isMounted) updateUserAndRole(null, null);
+            } finally {
+                if (isMounted) setLoading(false);
+            }
+        };
+
+        fetchSession();
+
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-            console.log('Auth event (Vercel Fix):', event);
+            if (event === 'INITIAL_SESSION') return;
 
             // Evitar llamadas duplicadas: si el usuario es el mismo y ya tenemos su rol (leyendo del Ref)
-            // Solo lo omitimos si no es el evento inicial para asegurar que cargue al principio
-            if (event !== 'INITIAL_SESSION' && session?.user?.id === userRef.current?.id && roleRef.current !== null) {
+            if (session?.user?.id === userRef.current?.id && roleRef.current !== null) {
                 if (isMounted) setLoading(false);
                 return;
             }
 
             try {
                 if (session?.user) {
-                    // Fetch role from profiles table
                     let { data, error } = await supabase
                         .from('profiles')
                         .select('role')
