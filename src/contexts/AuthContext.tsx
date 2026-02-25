@@ -28,50 +28,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     };
 
     useEffect(() => {
-        const fetchInitialSession = async () => {
-            try {
-                const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        let isMounted = true;
 
-                if (sessionError) throw sessionError;
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+            console.log('Auth event (Vercel Fix):', event);
 
-                if (session?.user) {
-                    let { data, error } = await supabase.from('profiles').select('role').eq('id', session.user.id).single();
-
-                    // Compensación de tiempo para el Trigger de la DB: 
-                    // Si el perfil no existe "aun" (PGRST116), reintenta en breve.
-                    if (error && error.code === 'PGRST116') {
-                        await new Promise(res => setTimeout(res, 1000));
-                        const retry = await supabase.from('profiles').select('role').eq('id', session.user.id).single();
-                        data = retry.data;
-                        error = retry.error;
-                    }
-
-                    if (error) {
-                        // User was likely deleted from the database but local session remains
-                        await supabase.auth.signOut();
-                        updateUserAndRole(null, null);
-                    } else {
-                        updateUserAndRole(session.user, data?.role || 'viewer');
-                    }
-                } else {
-                    updateUserAndRole(null, null);
-                }
-            } catch (error) {
-                console.error("Error during initial session fetch:", error);
-                updateUserAndRole(null, null);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchInitialSession();
-
-        // Escuchar cambios de autenticación
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-            if (_event === 'INITIAL_SESSION') return; // ya lo manejamos arriba
-
-            // Evitar llamadas duplicadas: si el usuario es el mismo y ya tenemos su rol (leyendo del Ref actualizado)
-            if (session?.user?.id === userRef.current?.id && roleRef.current !== null) {
+            // Evitar llamadas duplicadas: si el usuario es el mismo y ya tenemos su rol (leyendo del Ref)
+            // Solo lo omitimos si no es el evento inicial para asegurar que cargue al principio
+            if (event !== 'INITIAL_SESSION' && session?.user?.id === userRef.current?.id && roleRef.current !== null) {
+                if (isMounted) setLoading(false);
                 return;
             }
 
@@ -91,6 +56,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                         error = retry.error;
                     }
 
+                    if (!isMounted) return;
+
                     if (error) {
                         await supabase.auth.signOut();
                         updateUserAndRole(null, null);
@@ -98,17 +65,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                         updateUserAndRole(session.user, data?.role || 'viewer');
                     }
                 } else {
-                    updateUserAndRole(null, null);
+                    if (isMounted) updateUserAndRole(null, null);
                 }
             } catch (error) {
                 console.error("Error during auth state change:", error);
-                updateUserAndRole(null, null);
+                if (isMounted) updateUserAndRole(null, null);
             } finally {
-                setLoading(false);
+                if (isMounted) setLoading(false);
             }
         });
 
-        return () => subscription.unsubscribe();
+        return () => {
+            isMounted = false;
+            subscription.unsubscribe();
+        };
     }, []);
 
     return (
