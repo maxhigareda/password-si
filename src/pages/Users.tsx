@@ -19,10 +19,7 @@ export function Users() {
 
     const fetchUsers = async () => {
         setLoading(true);
-        const { data, error } = await supabase
-            .from('profiles')
-            .select('*')
-            .order('created_at', { ascending: false });
+        const { data, error } = await supabase.rpc('get_all_profiles');
 
         if (error) {
             console.error('Error fetching users:', error);
