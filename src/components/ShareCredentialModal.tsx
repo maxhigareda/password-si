@@ -34,8 +34,7 @@ export function ShareCredentialModal({ isOpen, onClose, credentialId }: ShareMod
             // 1. Fetch all viewers
             const { data: profilesData } = await supabase
                 .from('profiles')
-                .select('id, email, role')
-                .eq('role', 'viewer');
+                .select('id, email, role');
 
             setViewers(profilesData || []);
 
@@ -127,7 +126,7 @@ export function ShareCredentialModal({ isOpen, onClose, credentialId }: ShareMod
                         {loading ? (
                             <p className="text-center text-[var(--text-secondary)] py-4 text-sm">Cargando usuarios...</p>
                         ) : filteredViewers.length === 0 ? (
-                            <p className="text-center text-[var(--text-secondary)] py-4 text-sm">No se encontraron usuarios Viewer.</p>
+                            <p className="text-center text-[var(--text-secondary)] py-4 text-sm">No se encontraron usuarios.</p>
                         ) : (
                             filteredViewers.map(viewer => {
                                 const isShared = sharedWith.includes(viewer.id);
@@ -136,8 +135,8 @@ export function ShareCredentialModal({ isOpen, onClose, credentialId }: ShareMod
                                         key={viewer.id}
                                         onClick={() => toggleShare(viewer.id)}
                                         className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-colors ${isShared
-                                                ? 'border-[var(--accent-green)] bg-[var(--accent-green)]/10'
-                                                : 'border-[var(--border-color)] hover:bg-[var(--bg-surface-hover)]'
+                                            ? 'border-[var(--accent-green)] bg-[var(--accent-green)]/10'
+                                            : 'border-[var(--border-color)] hover:bg-[var(--bg-surface-hover)]'
                                             }`}
                                     >
                                         <div className="truncate pr-4">
