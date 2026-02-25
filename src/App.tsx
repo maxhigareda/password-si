@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { Login } from './pages/Login';
 import { Dashboard } from './pages/Dashboard';
+import { Users } from './pages/Users';
 import './index.css';
 
 function App() {
@@ -17,7 +18,7 @@ function App() {
 
         {/* Rutas Protegidas solo para Admin */}
         <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
-          <Route path="/users" element={<div className="p-6 text-[var(--text-primary)] text-xl">Gestión de Usuarios (Próximamente)</div>} />
+          <Route path="/users" element={<Users />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
