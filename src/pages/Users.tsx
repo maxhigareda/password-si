@@ -97,27 +97,35 @@ export function Users() {
                     </div>
                 ) : (
                     users.map(user => (
-                        <div key={user.id} className="card p-6 flex flex-col items-center text-center gap-4 hover:border-[var(--accent-green)] transition-colors">
-                            <div className="w-16 h-16 rounded-full bg-[var(--bg-dark)] border border-[var(--border-color)] flex items-center justify-center flex-shrink-0">
+                        <div key={user.id} className="card p-4 md:p-6 flex flex-row md:flex-col items-center md:items-center text-left md:text-center gap-3 md:gap-4 hover:border-[var(--accent-green)] transition-colors">
+                            <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-[var(--bg-dark)] border border-[var(--border-color)] flex items-center justify-center flex-shrink-0">
                                 {user.role === 'admin' ? (
-                                    <ShieldCheck className="w-8 h-8 text-[var(--accent-green)]" />
+                                    <ShieldCheck className="w-6 h-6 md:w-8 md:h-8 text-[var(--accent-green)]" />
                                 ) : (
-                                    <UsersIcon className="w-8 h-8 text-[var(--text-primary)]" />
+                                    <UsersIcon className="w-6 h-6 md:w-8 md:h-8 text-[var(--text-primary)]" />
                                 )}
                             </div>
 
-                            <div className="w-full">
-                                <h3 className="text-[var(--text-primary)] font-medium text-lg truncate px-2" title={user.email}>
+                            <div className="flex-1 min-w-0">
+                                <h3 className="text-[var(--text-primary)] font-medium text-base md:text-lg truncate md:px-2" title={user.email}>
                                     {user.email.split('@')[0]}
                                 </h3>
-                                <div className="flex items-center justify-center gap-1 mt-1 text-[var(--text-secondary)] text-sm">
-                                    <Mail className="w-3 h-3" />
+                                <div className="flex items-center md:justify-center gap-1 mt-0.5 md:mt-1 text-[var(--text-secondary)] text-xs md:text-sm">
+                                    <Mail className="w-3 h-3 flex-shrink-0" />
                                     <span className="truncate" title={user.email}>{user.email}</span>
+                                </div>
+                                <div className="mt-1.5 md:hidden">
+                                    <span className={`inline-block px-2 py-0.5 text-[10px] font-medium rounded-full border ${user.role === 'admin'
+                                        ? 'bg-[var(--accent-green)]/10 text-[var(--accent-green)] border-[var(--accent-green)]/20'
+                                        : 'bg-[var(--bg-dark)] text-[var(--text-secondary)] border-[var(--border-color)]'
+                                        }`}>
+                                        {user.role.toUpperCase()}
+                                    </span>
                                 </div>
                             </div>
 
-                            <div className="mt-auto pt-4 border-t border-[var(--border-color)] w-full flex items-center justify-between">
-                                <span className={`inline-block px-3 py-1 text-xs font-medium rounded-full ${user.role === 'admin'
+                            <div className="flex flex-col items-end justify-center md:mt-auto md:pt-4 md:border-t border-[var(--border-color)] md:w-full md:flex-row md:items-center md:justify-between">
+                                <span className={`hidden md:inline-block px-3 py-1 text-xs font-medium rounded-full ${user.role === 'admin'
                                     ? 'bg-[var(--accent-green)]/10 text-[var(--accent-green)] border border-[var(--accent-green)]/20'
                                     : 'bg-[var(--bg-dark)] text-[var(--text-secondary)] border border-[var(--border-color)]'
                                     }`}>
@@ -128,9 +136,9 @@ export function Users() {
                                     <button
                                         onClick={() => toggleRole(user)}
                                         disabled={updatingId === user.id}
-                                        className="text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors underline disabled:opacity-50"
+                                        className="text-[11px] md:text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors disabled:opacity-50 whitespace-nowrap bg-[var(--bg-dark)] md:bg-transparent px-2.5 py-1.5 md:p-0 rounded-md border border-[var(--border-color)] md:border-none md:underline"
                                     >
-                                        {updatingId === user.id ? 'Cambiando...' : `Hacer ${user.role === 'admin' ? 'Viewer' : 'Admin'}`}
+                                        {updatingId === user.id ? '...' : `Hacer ${user.role === 'admin' ? 'Viewer' : 'Admin'}`}
                                     </button>
                                 )}
                             </div>
