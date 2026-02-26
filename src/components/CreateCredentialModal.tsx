@@ -65,7 +65,15 @@ export function CreateCredentialModal({ isOpen, onClose, onSuccess, initialData 
         try {
             if (!user) throw new Error('Usuario no autenticado');
 
-            const encryptedPassword = encryptPassword(password);
+            // Intenta encriptar de forma segura y atrapar errores sincrónicos de crypto-js
+            let encryptedPassword = '';
+            try {
+                encryptedPassword = encryptPassword(password);
+                if (!encryptedPassword) throw new Error('El cifrado devolvió vacío.');
+            } catch (encryptionError) {
+                console.error("Encryption failed:", encryptionError);
+                throw new Error("No se pudo cifrar la contraseña. Verifica que la variable VITE_ENCRYPTION_KEY esté configurada en Vercel/Netlify.");
+            }
 
             if (initialData) {
                 // EDIT MODE
@@ -99,14 +107,14 @@ export function CreateCredentialModal({ isOpen, onClose, onSuccess, initialData 
 
             onSuccess();
             onClose();
-            // Limpiar formulario (se hace también en el useEffect, pero por convención)
             setPlatform('');
             setUsername('');
             setPassword('');
             setUrl('');
-        } catch (err: unknown) {
+        } catch (err: any) {
             console.error('Submission Error:', err);
-            const errorMessage = err instanceof Error ? err.message : 'Error al guardar credencial en la base de datos.';
+            // Supabase occasionally throws objects instead of Error instances
+            const errorMessage = err?.message || err?.error_description || (typeof err === 'string' ? err : 'Error al guardar credencial en la base de datos.');
             setError(errorMessage);
         } finally {
             setLoading(false);
