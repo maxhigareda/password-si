@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Plus, Copy, Eye, EyeOff, KeyRound, ExternalLink, Trash2, Users, Edit } from 'lucide-react';
+import { Plus, Copy, Eye, KeyRound, ExternalLink, Trash2, Users, Edit } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { CreateCredentialModal } from '../components/CreateCredentialModal';
 import { ShareCredentialModal } from '../components/ShareCredentialModal';
+import { ViewCredentialModal } from '../components/ViewCredentialModal';
 
 interface Credential {
     id: string; // uuid from DB
@@ -17,10 +18,10 @@ export function Dashboard() {
     const { role } = useAuth();
     const [credentials, setCredentials] = useState<Credential[]>([]);
     const [loading, setLoading] = useState(true);
-    const [visiblePasswords, setVisiblePasswords] = useState<Record<string, boolean>>({});
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [editingCredential, setEditingCredential] = useState<Credential | null>(null);
     const [shareModalCredId, setShareModalCredId] = useState<string | null>(null);
+    const [viewingCredential, setViewingCredential] = useState<Credential | null>(null);
 
     const openCreateModal = () => {
         setEditingCredential(null);
@@ -51,10 +52,6 @@ export function Dashboard() {
     useEffect(() => {
         fetchCredentials();
     }, []);
-
-    const togglePassword = (id: string) => {
-        setVisiblePasswords(prev => ({ ...prev, [id]: !prev[id] }));
-    };
 
     const copyToClipboard = (text?: string) => {
         if (text) navigator.clipboard.writeText(text);
@@ -124,11 +121,12 @@ export function Dashboard() {
                                 <div className="min-w-0 flex-1">
                                     <div className="text-xs text-[var(--text-secondary)] mb-1">Contraseña</div>
                                     <div className="text-sm font-mono tracking-widest text-[var(--text-primary)] truncate">
-                                        {visiblePasswords[cred.id] ? cred.password : '••••••••'}
+                                        ••••••••
                                     </div>
                                 </div>
-                                <button onClick={() => togglePassword(cred.id)} className="btn-icon flex-shrink-0" title="Mostrar/Ocultar">
-                                    {visiblePasswords[cred.id] ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                <button onClick={() => setViewingCredential(cred)} className="btn-secondary text-sm flex-shrink-0" title="Ver Detalles">
+                                    <Eye className="w-4 h-4 mr-1" />
+                                    Ver
                                 </button>
                             </div>
 
@@ -153,8 +151,8 @@ export function Dashboard() {
             </div>
 
             {/* Vista para escritorio */}
-            <div className="hidden md:block card overflow-hidden">
-                <table className="w-full text-left border-collapse">
+            <div className="hidden md:block card overflow-x-auto">
+                <table className="w-full text-left border-collapse min-w-[600px]">
                     <thead>
                         <tr className="bg-[var(--bg-surface-hover)] border-b border-[var(--border-color)]">
                             <th className="py-4 px-6 font-semibold text-[var(--text-secondary)]">Plataforma</th>
@@ -195,10 +193,10 @@ export function Dashboard() {
                                     <td className="py-4 px-6">
                                         <div className="flex items-center gap-2">
                                             <span className="font-mono tracking-widest text-[var(--text-primary)] bg-[var(--bg-dark)] px-3 py-1 rounded inline-block min-w-[120px] text-center select-none">
-                                                {visiblePasswords[cred.id] ? cred.password : '••••••••'}
+                                                ••••••••
                                             </span>
-                                            <button onClick={() => togglePassword(cred.id)} className="btn-icon" title="Mostrar/Ocultar">
-                                                {visiblePasswords[cred.id] ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                            <button onClick={() => setViewingCredential(cred)} className="btn-icon" title="Ver Detalles">
+                                                <Eye className="w-4 h-4" />
                                             </button>
                                         </div>
                                     </td>
@@ -244,6 +242,12 @@ export function Dashboard() {
                 isOpen={!!shareModalCredId}
                 onClose={() => setShareModalCredId(null)}
                 credentialId={shareModalCredId}
+            />
+
+            <ViewCredentialModal
+                isOpen={!!viewingCredential}
+                onClose={() => setViewingCredential(null)}
+                credential={viewingCredential}
             />
         </div>
     );
