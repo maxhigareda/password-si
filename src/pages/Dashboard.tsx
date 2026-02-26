@@ -160,7 +160,14 @@ export function Dashboard() {
                                                     ••••••••
                                                 </div>
                                             </div>
-                                            <button onClick={() => setViewingCredential(cred)} className="btn-secondary text-sm flex-shrink-0" title="Ver Detalles">
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setViewingCredential(cred);
+                                                }}
+                                                className="btn-secondary text-sm flex-shrink-0"
+                                                title="Ver Detalles"
+                                            >
                                                 <Eye className="w-4 h-4 mr-1" />
                                                 Ver
                                             </button>

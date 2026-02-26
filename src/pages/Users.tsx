@@ -81,7 +81,7 @@ export function Users() {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="flex flex-col md:grid md:grid-cols-2 lg:grid-cols-3 divide-y border-y border-[var(--border-color)] md:gap-6 md:divide-hidden md:border-none">
                 {loading ? (
                     <div className="col-span-full py-8 text-center text-[var(--text-secondary)]">
                         Cargando usuarios...
@@ -97,7 +97,7 @@ export function Users() {
                     </div>
                 ) : (
                     users.map(user => (
-                        <div key={user.id} className="card p-4 md:p-6 flex flex-row md:flex-col items-center md:items-center text-left md:text-center gap-3 md:gap-4 hover:border-[var(--accent-green)] transition-colors">
+                        <div key={user.id} className="p-4 md:p-6 flex flex-row md:flex-col items-center md:items-center text-left md:text-center gap-3 md:gap-4 md:card hover:bg-[var(--bg-surface-hover)] transition-colors">
                             <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-[var(--bg-dark)] border border-[var(--border-color)] flex items-center justify-center flex-shrink-0">
                                 {user.role === 'admin' ? (
                                     <ShieldCheck className="w-6 h-6 md:w-8 md:h-8 text-[var(--accent-green)]" />
@@ -110,9 +110,9 @@ export function Users() {
                                 <h3 className="text-[var(--text-primary)] font-medium text-base md:text-lg truncate md:px-2" title={user.email}>
                                     {user.email.split('@')[0]}
                                 </h3>
-                                <div className="flex items-center md:justify-center gap-1 mt-0.5 md:mt-1 text-[var(--text-secondary)] text-xs md:text-sm">
-                                    <Mail className="w-3 h-3 flex-shrink-0" />
-                                    <span className="truncate" title={user.email}>{user.email}</span>
+                                <div className="flex items-center md:justify-center gap-1 mt-0.5 md:text-[var(--text-secondary)] text-xs md:text-sm">
+                                    <Mail className="w-3 h-3 flex-shrink-0 text-[var(--text-secondary)]" />
+                                    <span className="truncate text-[var(--text-secondary)]" title={user.email}>{user.email}</span>
                                 </div>
                                 <div className="mt-1.5 md:hidden">
                                     <span className={`inline-block px-2 py-0.5 text-[10px] font-medium rounded-full border ${user.role === 'admin'
@@ -134,7 +134,10 @@ export function Users() {
 
                                 {user.id !== currentUser?.id && (
                                     <button
-                                        onClick={() => toggleRole(user)}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            toggleRole(user);
+                                        }}
                                         disabled={updatingId === user.id}
                                         className="text-[11px] md:text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors disabled:opacity-50 whitespace-nowrap bg-[var(--bg-dark)] md:bg-transparent px-2.5 py-1.5 md:p-0 rounded-md border border-[var(--border-color)] md:border-none md:underline"
                                     >
