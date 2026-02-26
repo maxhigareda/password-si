@@ -12,7 +12,7 @@ export const supabase = createClient(
   supabaseAnonKey || 'placeholder',
   {
     auth: {
-      lock: async (_name: string, _timeout: number, acquire: () => Promise<any>) => {
+      lock: async <R>(_name: string, _timeout: number, acquire: () => Promise<R>): Promise<R> => {
         return await acquire();
       },
       autoRefreshToken: true,

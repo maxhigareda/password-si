@@ -32,6 +32,7 @@ export function Users() {
     };
 
     useEffect(() => {
+        // eslint-disable-next-line
         fetchUsers();
     }, []);
 

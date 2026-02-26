@@ -101,9 +101,10 @@ export function CreateCredentialModal({ isOpen, onClose, onSuccess, initialData 
             setUsername('');
             setPassword('');
             setUrl('');
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error('Submission Error:', err);
-            setError(err.message || err.error_description || 'Error al guardar credencial en la base de datos.');
+            const errorMessage = err instanceof Error ? err.message : 'Error al guardar credencial en la base de datos.';
+            setError(errorMessage);
         } finally {
             setLoading(false);
         }

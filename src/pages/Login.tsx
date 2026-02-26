@@ -42,12 +42,13 @@ export function Login() {
                 setPassword('');
                 setIsLogin(true);
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error('============== ERROR EN LOGIN/REGISTRO ==============', err);
 
             // Construimos un string detallado del error para mostrarlo en pantalla
+            const errorMessage = err instanceof Error ? err.message : 'Desconocido';
             const devErrorDetails = JSON.stringify(err, Object.getOwnPropertyNames(err), 2);
-            setError(`Error: ${err.message || 'Desconocido'}. Detalles técnicos: ${devErrorDetails}`);
+            setError(`Error: ${errorMessage}. Detalles técnicos: ${devErrorDetails}`);
         } finally {
             console.log('Finalizando proceso, apagando loading state...');
             setLoading(false);
@@ -67,7 +68,7 @@ export function Login() {
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                     {error && (
-                        <div className="bg-red-500/10 border border-red-500/50 text-red-500 text-sm p-3 rounded-md">
+                        <div className="bg-red-500/10 border border-red-500/50 text-red-500 text-sm p-3 rounded-md break-all">
                             {error}
                         </div>
                     )}

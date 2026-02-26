@@ -50,6 +50,7 @@ export function Dashboard() {
     };
 
     useEffect(() => {
+        // eslint-disable-next-line
         fetchCredentials();
     }, []);
 
