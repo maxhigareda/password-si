@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabase';
 interface ShareModalProps {
     isOpen: boolean;
     onClose: () => void;
-    credentialId: string | null;
+    credential: { id: string; client?: string; platform: string } | null;
 }
 
 interface Profile {
@@ -14,21 +14,25 @@ interface Profile {
     role: string;
 }
 
-export function ShareCredentialModal({ isOpen, onClose, credentialId }: ShareModalProps) {
+export function ShareCredentialModal({ isOpen, onClose, credential }: ShareModalProps) {
     const [viewers, setViewers] = useState<Profile[]>([]);
     const [sharedWith, setSharedWith] = useState<string[]>([]);
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
+    const [shareEntireClient, setShareEntireClient] = useState(false);
 
     useEffect(() => {
-        if (isOpen && credentialId) {
+        if (isOpen && credential) {
+            setSearchTerm('');
+            setShareEntireClient(false);
             fetchData();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isOpen, credentialId]);
+    }, [isOpen, credential]);
 
     const fetchData = async () => {
+        if (!credential) return;
         setLoading(true);
         try {
             // 1. Fetch all viewers
@@ -42,7 +46,7 @@ export function ShareCredentialModal({ isOpen, onClose, credentialId }: ShareMod
             const { data: sharesData } = await supabase
                 .from('credential_shares')
                 .select('viewer_id')
-                .eq('credential_id', credentialId);
+                .eq('credential_id', credential.id);
 
             if (sharesData) {
                 setSharedWith(sharesData.map(s => s.viewer_id));
@@ -65,35 +69,71 @@ export function ShareCredentialModal({ isOpen, onClose, credentialId }: ShareMod
     };
 
     const handleSave = async () => {
-        if (!credentialId) return;
+        if (!credential) return;
         setSaving(true);
         try {
-            // Simplest way: Delete all existing shares for this cred, then insert new ones
-            await supabase
-                .from('credential_shares')
-                .delete()
-                .eq('credential_id', credentialId);
+            if (shareEntireClient && credential.client) {
+                // Compartir TODO el cliente
+                // 1. Obtener todas las credenciales de este cliente
+                const { data: clientCreds, error: fetchError } = await supabase
+                    .from('credentials')
+                    .select('id')
+                    .eq('client', credential.client);
 
-            if (sharedWith.length > 0) {
-                const inserts = sharedWith.map(viewerId => ({
-                    credential_id: credentialId,
-                    viewer_id: viewerId
-                }));
+                if (fetchError) throw fetchError;
+                const credIds = clientCreds?.map(c => c.id) || [];
 
+                if (credIds.length > 0) {
+                    const inserts = [];
+                    for (const credId of credIds) {
+                        // Borrar comparticiones previas de estas credenciales antes de insertar todo de nuevo
+                        await supabase
+                            .from('credential_shares')
+                            .delete()
+                            .eq('credential_id', credId);
+
+                        for (const viewerId of sharedWith) {
+                            inserts.push({
+                                credential_id: credId,
+                                viewer_id: viewerId
+                            });
+                        }
+                    }
+
+                    if (inserts.length > 0) {
+                        await supabase
+                            .from('credential_shares')
+                            .insert(inserts);
+                    }
+                }
+            } else {
+                // Comportamiento normal: Compartir SOLO esta credencial
                 await supabase
                     .from('credential_shares')
-                    .insert(inserts);
+                    .delete()
+                    .eq('credential_id', credential.id);
+
+                if (sharedWith.length > 0) {
+                    const inserts = sharedWith.map(viewerId => ({
+                        credential_id: credential.id,
+                        viewer_id: viewerId
+                    }));
+
+                    await supabase
+                        .from('credential_shares')
+                        .insert(inserts);
+                }
             }
             onClose();
         } catch (error) {
             console.error('Error saving shares', error);
-            alert('Error al guardar permisos');
+            alert('Error al guardar permisos en Supabase');
         } finally {
             setSaving(false);
         }
     };
 
-    if (!isOpen) return null;
+    if (!isOpen || !credential) return null;
 
     const filteredViewers = viewers.filter(v => v.email.toLowerCase().includes(searchTerm.toLowerCase()));
 
@@ -101,16 +141,45 @@ export function ShareCredentialModal({ isOpen, onClose, credentialId }: ShareMod
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
             <div className="bg-[var(--bg-surface)] rounded-xl w-full max-w-md border border-[var(--border-color)] shadow-2xl flex flex-col max-h-[80vh]">
                 <div className="flex justify-between items-center p-6 border-b border-[var(--border-color)]">
-                    <div className="flex items-center gap-2">
-                        <ShieldCheck className="w-5 h-5 text-[var(--accent-green)]" />
-                        <h2 className="text-xl font-semibold text-[var(--text-primary)]">Compartir Acceso</h2>
+                    <div className="flex flex-col">
+                        <div className="flex items-center gap-2">
+                            <ShieldCheck className="w-5 h-5 text-[var(--accent-green)]" />
+                            <h2 className="text-lg font-semibold text-[var(--text-primary)] leading-tight truncate max-w-[200px]">
+                                {credential.platform}
+                            </h2>
+                        </div>
+                        <p className="text-xs text-[var(--text-secondary)] mt-1">
+                            Elige quién puede ver esto
+                        </p>
                     </div>
-                    <button onClick={onClose} className="btn-icon">
+                    <button onClick={onClose} className="btn-icon self-start">
                         <X className="w-5 h-5" />
                     </button>
                 </div>
 
                 <div className="p-6 flex-1 overflow-hidden flex flex-col gap-4">
+                    {credential.client && (
+                        <div className="p-4 bg-[var(--bg-dark)] border border-[var(--accent-green)]/30 rounded-lg flex gap-3 items-start animate-fade-in shadow-inner shadow-[var(--accent-green)]/5">
+                            <svg className="w-5 h-5 text-[var(--accent-green)] shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
+                            <div>
+                                <h3 className="text-sm font-semibold text-[var(--text-primary)]">Agrupar por Cliente</h3>
+                                <p className="text-xs text-[var(--text-secondary)] mt-1">
+                                    Esta credencial pertenece a <strong>{credential.client}</strong>. Puedes dar acceso a todas las contraseñas de este cliente a la vez.
+                                </p>
+                                <label className="flex items-center gap-2 mt-3 cursor-pointer group w-fit">
+                                    <input
+                                        type="checkbox"
+                                        checked={shareEntireClient}
+                                        onChange={(e) => setShareEntireClient(e.target.checked)}
+                                        className="w-4 h-4 rounded bg-[var(--bg-surface)] border-[var(--border-color)] text-[var(--accent-green)] focus:ring-[var(--accent-green)] focus:ring-offset-[var(--bg-dark)]"
+                                    />
+                                    <span className="text-sm text-[var(--text-primary)] group-hover:text-[var(--accent-green)] transition-colors">
+                                        Compartir TODO el cliente
+                                    </span>
+                                </label>
+                            </div>
+                        </div>
+                    )}
                     <div className="relative">
                         <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-[var(--text-secondary)]" />
                         <input

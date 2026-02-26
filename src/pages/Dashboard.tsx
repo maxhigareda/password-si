@@ -10,10 +10,12 @@ import { decryptPassword } from '../utils/crypto';
 interface Credential {
     id: string; // uuid from DB
     owner_id: string;
+    client?: string;
     platform: string;
     username: string;
     password?: string;
     url: string | null;
+    created_at: string;
     updated_at: string;
 }
 
@@ -23,7 +25,7 @@ export function Dashboard() {
     const [loading, setLoading] = useState(true);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [editingCredential, setEditingCredential] = useState<Credential | null>(null);
-    const [shareModalCredId, setShareModalCredId] = useState<string | null>(null);
+    const [shareModalCred, setShareModalCred] = useState<Credential | null>(null);
     const [viewingCredential, setViewingCredential] = useState<Credential | null>(null);
     const [expandedCredId, setExpandedCredId] = useState<string | null>(null);
 
@@ -136,7 +138,14 @@ export function Dashboard() {
                                             <KeyRound className="w-5 h-5 text-[var(--accent-green)]" />
                                         </div>
                                         <div className="min-w-0">
-                                            <span className="block font-medium text-[var(--text-primary)] truncate">{cred.platform}</span>
+                                            <div className="flex items-center gap-2">
+                                                <span className="block font-medium text-[var(--text-primary)] truncate">{cred.platform}</span>
+                                                {cred.client && (
+                                                    <span className="bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-secondary)] text-[10px] px-2 py-0.5 rounded-full whitespace-nowrap">
+                                                        {cred.client}
+                                                    </span>
+                                                )}
+                                            </div>
                                             {cred.url && (
                                                 <a
                                                     href={cred.url}
@@ -199,8 +208,12 @@ export function Dashboard() {
                                             </button>
                                         </div>
 
-                                        <div className="flex items-center justify-between text-xs text-[var(--text-secondary)] px-1">
-                                            <span>Última act.: {new Date(cred.updated_at).toLocaleDateString()}</span>
+                                        <div className="bg-[var(--bg-dark)] rounded-lg p-3 border border-[var(--border-color)]">
+                                            <div className="text-xs font-medium text-[var(--text-secondary)] mb-2 uppercase tracking-wider">Historia</div>
+                                            <div className="flex justify-between items-center text-xs text-[var(--text-secondary)]">
+                                                <span>Creado: {new Date(cred.created_at).toLocaleDateString()}</span>
+                                                <span>Actualizado: {new Date(cred.updated_at).toLocaleDateString()}</span>
+                                            </div>
                                         </div>
 
                                         {(role === 'admin' || cred.owner_id === user?.id) && (
@@ -214,7 +227,7 @@ export function Dashboard() {
                                                     Eliminar
                                                 </button>
                                                 {role === 'admin' && (
-                                                    <button onClick={() => setShareModalCredId(cred.id)} className="btn-secondary flex justify-center text-xs py-2.5 w-full col-span-2" title="Compartir">
+                                                    <button onClick={() => setShareModalCred(cred)} className="btn-secondary flex justify-center text-xs py-2.5 w-full col-span-2" title="Compartir">
                                                         <Users className="w-4 h-4 mr-1.5" />
                                                         Compartir
                                                     </button>
@@ -258,9 +271,18 @@ export function Dashboard() {
                                                 <KeyRound className="w-5 h-5 text-[var(--accent-green)]" />
                                             </div>
                                             <div className="min-w-0">
-                                                <span className="block font-medium text-[var(--text-primary)] truncate">{cred.platform}</span>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="block font-medium text-[var(--text-primary)] truncate">{cred.platform}</span>
+                                                    {cred.client && (
+                                                        <span className="bg-[var(--bg-dark)] border border-[var(--border-color)] text-[var(--text-secondary)] text-[10px] px-2 py-0.5 rounded-full whitespace-nowrap">
+                                                            {cred.client}
+                                                        </span>
+                                                    )}
+                                                </div>
                                                 <div className="flex items-center gap-2 mt-0.5">
-                                                    <span className="text-[10px] text-[var(--text-secondary)]">Act: {new Date(cred.updated_at).toLocaleDateString()}</span>
+                                                    <span className="text-[10px] text-[var(--text-secondary)]" title={`Creado: ${new Date(cred.created_at).toLocaleDateString()}`}>
+                                                        Act: {new Date(cred.updated_at).toLocaleDateString()}
+                                                    </span>
                                                     {cred.url && (
                                                         <a href={cred.url} target="_blank" rel="noreferrer" className="text-xs text-[var(--text-secondary)] hover:text-[var(--accent-green)] flex items-center gap-1 w-fit">
                                                             <ExternalLink className="w-3 h-3 flex-shrink-0" />
@@ -299,7 +321,7 @@ export function Dashboard() {
                                                 </>
                                             )}
                                             {role === 'admin' && (
-                                                <button onClick={() => setShareModalCredId(cred.id)} className="btn-icon" title="Compartir">
+                                                <button onClick={() => setShareModalCred(cred)} className="btn-icon" title="Compartir">
                                                     <Users className="w-4 h-4" />
                                                 </button>
                                             )}
@@ -323,9 +345,9 @@ export function Dashboard() {
             />
 
             <ShareCredentialModal
-                isOpen={!!shareModalCredId}
-                onClose={() => setShareModalCredId(null)}
-                credentialId={shareModalCredId}
+                isOpen={!!shareModalCred}
+                onClose={() => setShareModalCred(null)}
+                credential={shareModalCred}
             />
 
             <ViewCredentialModal

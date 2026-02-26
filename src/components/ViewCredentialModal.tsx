@@ -3,10 +3,13 @@ import { X, Copy, Eye, EyeOff, Shield } from 'lucide-react';
 
 interface Credential {
     id: string;
+    client?: string;
     platform: string;
     username: string;
     password?: string;
     url: string | null;
+    created_at: string;
+    updated_at: string;
 }
 
 interface ViewCredentialModalProps {
@@ -34,9 +37,16 @@ export function ViewCredentialModal({ isOpen, onClose, credential }: ViewCredent
                         <div className="w-10 h-10 rounded-full bg-[var(--bg-dark)] flex items-center justify-center border border-[var(--border-color)]">
                             <Shield className="w-5 h-5 text-[var(--accent-green)]" />
                         </div>
-                        <h2 className="text-xl font-bold text-[var(--text-primary)] truncate">
-                            {credential.platform}
-                        </h2>
+                        <div className="min-w-0">
+                            <h2 className="text-xl font-bold text-[var(--text-primary)] truncate">
+                                {credential.platform}
+                            </h2>
+                            {credential.client && (
+                                <span className="inline-block bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-secondary)] text-xs px-2 py-0.5 rounded-full mt-1">
+                                    {credential.client}
+                                </span>
+                            )}
+                        </div>
                     </div>
                     <button onClick={onClose} className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">
                         <X className="w-6 h-6" />
@@ -92,6 +102,26 @@ export function ViewCredentialModal({ isOpen, onClose, credential }: ViewCredent
                             ) : (
                                 <span className="tracking-[0.2em]">••••••••••••</span>
                             )}
+                        </div>
+                    </div>
+
+                    {/* History */}
+                    <div>
+                        <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">Historia</label>
+                        <div className="p-4 bg-[var(--bg-dark)] border border-[var(--border-color)] rounded-lg text-sm text-[var(--text-secondary)] flex flex-col gap-2">
+                            <div className="flex justify-between items-center">
+                                <span>Creado:</span>
+                                <span className="text-[var(--text-primary)] font-medium">
+                                    {new Date(credential.created_at).toLocaleString()}
+                                </span>
+                            </div>
+                            <div className="w-full h-px bg-[var(--border-color)]"></div>
+                            <div className="flex justify-between items-center">
+                                <span>Última actualización:</span>
+                                <span className="text-[var(--text-primary)] font-medium">
+                                    {new Date(credential.updated_at).toLocaleString()}
+                                </span>
+                            </div>
                         </div>
                     </div>
                 </div>

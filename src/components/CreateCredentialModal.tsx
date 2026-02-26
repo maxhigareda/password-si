@@ -7,6 +7,7 @@ import { encryptPassword } from '../utils/crypto';
 
 export interface CredentialData {
     id: string;
+    client?: string;
     platform: string;
     username: string;
     password?: string;
@@ -22,6 +23,7 @@ interface CredentialModalProps {
 
 export function CreateCredentialModal({ isOpen, onClose, onSuccess, initialData }: CredentialModalProps) {
     const { user } = useAuth();
+    const [client, setClient] = useState('');
     const [platform, setPlatform] = useState('');
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
@@ -32,11 +34,13 @@ export function CreateCredentialModal({ isOpen, onClose, onSuccess, initialData 
     useEffect(() => {
         if (isOpen) {
             if (initialData) {
+                setClient(initialData.client || '');
                 setPlatform(initialData.platform || '');
                 setUsername(initialData.username || '');
                 setPassword(initialData.password || '');
                 setUrl(initialData.url || '');
             } else {
+                setClient('');
                 setPlatform('');
                 setUsername('');
                 setPassword('');
@@ -80,6 +84,7 @@ export function CreateCredentialModal({ isOpen, onClose, onSuccess, initialData 
                 const { error: updateError } = await supabase
                     .from('credentials')
                     .update({
+                        client,
                         platform,
                         username,
                         password: encryptedPassword,
@@ -95,6 +100,7 @@ export function CreateCredentialModal({ isOpen, onClose, onSuccess, initialData 
                     .insert([
                         {
                             owner_id: user.id,
+                            client,
                             platform,
                             username,
                             password: encryptedPassword,
@@ -107,6 +113,7 @@ export function CreateCredentialModal({ isOpen, onClose, onSuccess, initialData 
 
             onSuccess();
             onClose();
+            setClient('');
             setPlatform('');
             setUsername('');
             setPassword('');
@@ -142,6 +149,19 @@ export function CreateCredentialModal({ isOpen, onClose, onSuccess, initialData 
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <form id="credForm" onSubmit={handleSubmit} className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">
+                                    Cliente (Opcional)
+                                </label>
+                                <input
+                                    type="text"
+                                    value={client}
+                                    onChange={e => setClient(e.target.value)}
+                                    className="input-field"
+                                    placeholder="ej. Empresa Acme S.A."
+                                />
+                            </div>
+
                             <div>
                                 <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1">
                                     Plataforma / Servicio
