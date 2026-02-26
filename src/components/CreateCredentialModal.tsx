@@ -3,6 +3,7 @@ import { X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { PasswordGenerator } from './PasswordGenerator';
+import { encryptPassword } from '../utils/crypto';
 
 export interface CredentialData {
     id: string;
@@ -64,6 +65,8 @@ export function CreateCredentialModal({ isOpen, onClose, onSuccess, initialData 
         try {
             if (!user) throw new Error('Usuario no autenticado');
 
+            const encryptedPassword = encryptPassword(password);
+
             if (initialData) {
                 // EDIT MODE
                 const { error: updateError } = await supabase
@@ -71,7 +74,7 @@ export function CreateCredentialModal({ isOpen, onClose, onSuccess, initialData 
                     .update({
                         platform,
                         username,
-                        password,
+                        password: encryptedPassword,
                         url: url || null,
                     })
                     .eq('id', initialData.id);
@@ -86,7 +89,7 @@ export function CreateCredentialModal({ isOpen, onClose, onSuccess, initialData 
                             owner_id: user.id,
                             platform,
                             username,
-                            password,
+                            password: encryptedPassword,
                             url: url || null,
                         }
                     ]);

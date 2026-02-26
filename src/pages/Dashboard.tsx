@@ -5,17 +5,20 @@ import { useAuth } from '../contexts/AuthContext';
 import { CreateCredentialModal } from '../components/CreateCredentialModal';
 import { ShareCredentialModal } from '../components/ShareCredentialModal';
 import { ViewCredentialModal } from '../components/ViewCredentialModal';
+import { decryptPassword } from '../utils/crypto';
 
 interface Credential {
     id: string; // uuid from DB
+    owner_id: string;
     platform: string;
     username: string;
     password?: string;
     url: string | null;
+    updated_at: string;
 }
 
 export function Dashboard() {
-    const { role } = useAuth();
+    const { user, role } = useAuth();
     const [credentials, setCredentials] = useState<Credential[]>([]);
     const [loading, setLoading] = useState(true);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -49,7 +52,11 @@ export function Dashboard() {
         if (error) {
             console.error('Error fetching credentials:', error);
         } else {
-            setCredentials(data || []);
+            const decryptedData = (data || []).map(cred => ({
+                ...cred,
+                password: cred.password ? decryptPassword(cred.password) : ''
+            }));
+            setCredentials(decryptedData as Credential[]);
         }
         setLoading(false);
     };
@@ -81,13 +88,32 @@ export function Dashboard() {
                     <h1 className="text-2xl font-bold text-[var(--text-primary)]">Tus Contraseñas</h1>
                     <p className="text-[var(--text-secondary)] mt-1">Gestiona de forma segura los accesos corporativos</p>
                 </div>
-                {role === 'admin' && (
-                    <button onClick={openCreateModal} className="btn-primary">
-                        <Plus className="w-5 h-5" />
-                        Nueva Credencial
-                    </button>
-                )}
+                <button
+                    onClick={openCreateModal}
+                    className="btn-primary disabled:opacity-50"
+                    disabled={role === 'viewer' && credentials.length >= 100}
+                >
+                    <Plus className="w-5 h-5" />
+                    <span className="hidden sm:inline">Nueva Credencial</span>
+                </button>
             </div>
+
+            {role === 'viewer' && (
+                <div className="bg-[var(--bg-surface)] p-4 rounded-lg flex flex-col gap-2 border border-[var(--border-color)]">
+                    <div className="flex justify-between text-sm">
+                        <span className="text-[var(--text-secondary)] font-medium">Almacenamiento (Límite Visor)</span>
+                        <span className={`font-medium ${credentials.length >= 100 ? 'text-red-400' : 'text-[var(--text-primary)]'}`}>
+                            {credentials.length} / 100
+                        </span>
+                    </div>
+                    <div className="w-full bg-[var(--bg-dark)] rounded-full h-2.5 overflow-hidden border border-[var(--border-color)]">
+                        <div
+                            className={`h-2.5 rounded-full ${credentials.length >= 100 ? 'bg-red-500' : 'bg-[var(--accent-green)] transition-all'}`}
+                            style={{ width: `${Math.min((credentials.length / 100) * 100, 100)}%` }}
+                        ></div>
+                    </div>
+                </div>
+            )}
 
             {/* Vista para móviles */}
             <div className="md:hidden space-y-4">
@@ -173,20 +199,26 @@ export function Dashboard() {
                                             </button>
                                         </div>
 
-                                        {role === 'admin' && (
-                                            <div className="grid grid-cols-2 gap-2 pt-2">
+                                        <div className="flex items-center justify-between text-xs text-[var(--text-secondary)] px-1">
+                                            <span>Última act.: {new Date(cred.updated_at).toLocaleDateString()}</span>
+                                        </div>
+
+                                        {(role === 'admin' || cred.owner_id === user?.id) && (
+                                            <div className={`grid gap-2 pt-2 ${role === 'admin' ? 'grid-cols-2' : 'grid-cols-2'}`}>
                                                 <button onClick={() => openEditModal(cred)} className="btn-secondary flex justify-center text-xs py-2.5 w-full" title="Editar">
                                                     <Edit className="w-4 h-4 mr-1.5" />
                                                     Editar
                                                 </button>
-                                                <button onClick={() => setShareModalCredId(cred.id)} className="btn-secondary flex justify-center text-xs py-2.5 w-full" title="Compartir">
-                                                    <Users className="w-4 h-4 mr-1.5" />
-                                                    Compartir
-                                                </button>
-                                                <button onClick={() => handleDelete(cred.id)} className="btn-secondary !text-red-400 hover:!bg-red-400/10 flex justify-center text-xs py-2.5 w-full col-span-2" title="Eliminar">
+                                                <button onClick={() => handleDelete(cred.id)} className="btn-secondary !text-red-400 hover:!bg-red-400/10 flex justify-center text-xs py-2.5 w-full" title="Eliminar">
                                                     <Trash2 className="w-4 h-4 mr-1.5" />
                                                     Eliminar
                                                 </button>
+                                                {role === 'admin' && (
+                                                    <button onClick={() => setShareModalCredId(cred.id)} className="btn-secondary flex justify-center text-xs py-2.5 w-full col-span-2" title="Compartir">
+                                                        <Users className="w-4 h-4 mr-1.5" />
+                                                        Compartir
+                                                    </button>
+                                                )}
                                             </div>
                                         )}
                                     </div>
@@ -227,12 +259,14 @@ export function Dashboard() {
                                             </div>
                                             <div className="min-w-0">
                                                 <span className="block font-medium text-[var(--text-primary)] truncate">{cred.platform}</span>
-                                                {cred.url && (
-                                                    <a href={cred.url} target="_blank" rel="noreferrer" className="text-xs text-[var(--text-secondary)] hover:text-[var(--accent-green)] flex items-center gap-1 mt-0.5 w-fit">
-                                                        <span className="truncate max-w-[150px] inline-block">{new URL(cred.url).hostname}</span>
-                                                        <ExternalLink className="w-3 h-3 flex-shrink-0" />
-                                                    </a>
-                                                )}
+                                                <div className="flex items-center gap-2 mt-0.5">
+                                                    <span className="text-[10px] text-[var(--text-secondary)]">Act: {new Date(cred.updated_at).toLocaleDateString()}</span>
+                                                    {cred.url && (
+                                                        <a href={cred.url} target="_blank" rel="noreferrer" className="text-xs text-[var(--text-secondary)] hover:text-[var(--accent-green)] flex items-center gap-1 w-fit">
+                                                            <ExternalLink className="w-3 h-3 flex-shrink-0" />
+                                                        </a>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
                                     </td>
@@ -253,18 +287,21 @@ export function Dashboard() {
                                                 <Copy className="w-4 h-4" />
                                                 Copiar
                                             </button>
-                                            {role === 'admin' && (
+
+                                            {(role === 'admin' || cred.owner_id === user?.id) && (
                                                 <>
                                                     <button onClick={() => openEditModal(cred)} className="btn-icon" title="Editar">
                                                         <Edit className="w-4 h-4" />
-                                                    </button>
-                                                    <button onClick={() => setShareModalCredId(cred.id)} className="btn-icon" title="Compartir">
-                                                        <Users className="w-4 h-4" />
                                                     </button>
                                                     <button onClick={() => handleDelete(cred.id)} className="btn-icon !text-red-400 hover:!bg-red-400/10" title="Eliminar">
                                                         <Trash2 className="w-4 h-4" />
                                                     </button>
                                                 </>
+                                            )}
+                                            {role === 'admin' && (
+                                                <button onClick={() => setShareModalCredId(cred.id)} className="btn-icon" title="Compartir">
+                                                    <Users className="w-4 h-4" />
+                                                </button>
                                             )}
                                         </div>
                                     </td>
