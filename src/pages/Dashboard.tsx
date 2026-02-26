@@ -86,7 +86,74 @@ export function Dashboard() {
                 )}
             </div>
 
-            <div className="card overflow-hidden">
+            {/* Vista para móviles */}
+            <div className="md:hidden space-y-4">
+                {loading ? (
+                    <div className="py-8 text-center text-[var(--text-secondary)] card">Cargando credenciales...</div>
+                ) : credentials.length === 0 ? (
+                    <div className="py-8 text-center text-[var(--text-secondary)] card">No hay credenciales guardadas</div>
+                ) : (
+                    credentials.map(cred => (
+                        <div key={`mobile-${cred.id}`} className="card p-4 flex flex-col gap-4">
+                            <div className="flex items-start justify-between gap-2">
+                                <div className="flex items-center gap-3 min-w-0">
+                                    <div className="w-10 h-10 rounded-lg bg-[var(--bg-dark)] flex items-center justify-center border border-[var(--border-color)] flex-shrink-0">
+                                        <KeyRound className="w-5 h-5 text-[var(--accent-green)]" />
+                                    </div>
+                                    <div className="min-w-0">
+                                        <span className="block font-medium text-[var(--text-primary)] truncate">{cred.platform}</span>
+                                        {cred.url && (
+                                            <a href={cred.url} target="_blank" rel="noreferrer" className="text-xs text-[var(--text-secondary)] hover:text-[var(--accent-green)] flex items-center gap-1 mt-0.5 w-fit">
+                                                <span className="truncate max-w-[150px] inline-block">{new URL(cred.url).hostname}</span>
+                                                <ExternalLink className="w-3 h-3 flex-shrink-0" />
+                                            </a>
+                                        )}
+                                    </div>
+                                </div>
+                                <button onClick={() => copyToClipboard(cred.password)} className="btn-icon flex-shrink-0" title="Copiar contraseña">
+                                    <Copy className="w-4 h-4" />
+                                </button>
+                            </div>
+
+                            <div className="bg-[var(--bg-dark)] rounded-lg p-3 border border-[var(--border-color)]">
+                                <div className="text-xs text-[var(--text-secondary)] mb-1">Usuario / Correo</div>
+                                <div className="text-sm font-mono text-[var(--text-primary)] break-all">{cred.username}</div>
+                            </div>
+
+                            <div className="bg-[var(--bg-dark)] rounded-lg p-3 border border-[var(--border-color)] flex justify-between items-center gap-2">
+                                <div className="min-w-0 flex-1">
+                                    <div className="text-xs text-[var(--text-secondary)] mb-1">Contraseña</div>
+                                    <div className="text-sm font-mono tracking-widest text-[var(--text-primary)] truncate">
+                                        {visiblePasswords[cred.id] ? cred.password : '••••••••'}
+                                    </div>
+                                </div>
+                                <button onClick={() => togglePassword(cred.id)} className="btn-icon flex-shrink-0" title="Mostrar/Ocultar">
+                                    {visiblePasswords[cred.id] ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                </button>
+                            </div>
+
+                            {role === 'admin' && (
+                                <div className="flex items-center gap-2 pt-2">
+                                    <button onClick={() => openEditModal(cred)} className="btn-secondary flex-1 justify-center text-xs py-2" title="Editar">
+                                        <Edit className="w-4 h-4 mr-1" />
+                                        Editar
+                                    </button>
+                                    <button onClick={() => setShareModalCredId(cred.id)} className="btn-secondary flex-1 justify-center text-xs py-2" title="Compartir">
+                                        <Users className="w-4 h-4 mr-1" />
+                                        Compartir
+                                    </button>
+                                    <button onClick={() => handleDelete(cred.id)} className="btn-icon !text-red-400 hover:!bg-red-400/10 flex-shrink-0" title="Eliminar">
+                                        <Trash2 className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    ))
+                )}
+            </div>
+
+            {/* Vista para escritorio */}
+            <div className="hidden md:block card overflow-hidden">
                 <table className="w-full text-left border-collapse">
                     <thead>
                         <tr className="bg-[var(--bg-surface-hover)] border-b border-[var(--border-color)]">

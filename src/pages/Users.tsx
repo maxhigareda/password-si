@@ -16,6 +16,7 @@ export function Users() {
     const [users, setUsers] = useState<Profile[]>([]);
     const [loading, setLoading] = useState(true);
     const [updatingId, setUpdatingId] = useState<string | null>(null);
+    const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
     const fetchUsers = async () => {
         setLoading(true);
@@ -23,8 +24,10 @@ export function Users() {
 
         if (error) {
             console.error('Error fetching users:', error);
+            setErrorMsg(error.message || 'Error desconocido al cargar usuarios');
         } else {
             setUsers(data || []);
+            setErrorMsg(null);
         }
         setLoading(false);
     };
@@ -83,9 +86,14 @@ export function Users() {
                     <div className="col-span-full py-8 text-center text-[var(--text-secondary)]">
                         Cargando usuarios...
                     </div>
+                ) : errorMsg ? (
+                    <div className="col-span-full py-8 text-center text-red-400 bg-red-400/10 rounded-lg">
+                        <p className="font-semibold">Error de Base de Datos:</p>
+                        <p>{errorMsg}</p>
+                    </div>
                 ) : users.length === 0 ? (
                     <div className="col-span-full py-8 text-center text-[var(--text-secondary)]">
-                        No hay usuarios registrados.
+                        No hay usuarios registrados. (O fallaron los permisos)
                     </div>
                 ) : (
                     users.map(user => (
