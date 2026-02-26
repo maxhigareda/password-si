@@ -132,17 +132,18 @@ export function Dashboard() {
                             </div>
 
                             {role === 'admin' && (
-                                <div className="flex items-center gap-2 pt-2">
-                                    <button onClick={() => openEditModal(cred)} className="btn-secondary flex-1 justify-center text-xs py-2" title="Editar">
-                                        <Edit className="w-4 h-4 mr-1" />
+                                <div className="grid grid-cols-2 gap-2 pt-2">
+                                    <button onClick={() => openEditModal(cred)} className="btn-secondary flex justify-center text-xs py-2.5 w-full" title="Editar">
+                                        <Edit className="w-4 h-4 mr-1.5" />
                                         Editar
                                     </button>
-                                    <button onClick={() => setShareModalCredId(cred.id)} className="btn-secondary flex-1 justify-center text-xs py-2" title="Compartir">
-                                        <Users className="w-4 h-4 mr-1" />
+                                    <button onClick={() => setShareModalCredId(cred.id)} className="btn-secondary flex justify-center text-xs py-2.5 w-full" title="Compartir">
+                                        <Users className="w-4 h-4 mr-1.5" />
                                         Compartir
                                     </button>
-                                    <button onClick={() => handleDelete(cred.id)} className="btn-icon !text-red-400 hover:!bg-red-400/10 flex-shrink-0" title="Eliminar">
-                                        <Trash2 className="w-4 h-4" />
+                                    <button onClick={() => handleDelete(cred.id)} className="btn-secondary !text-red-400 hover:!bg-red-400/10 flex justify-center text-xs py-2.5 w-full col-span-2" title="Eliminar">
+                                        <Trash2 className="w-4 h-4 mr-1.5" />
+                                        Eliminar
                                     </button>
                                 </div>
                             )}
