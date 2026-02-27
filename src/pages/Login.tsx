@@ -119,6 +119,10 @@ export function Login() {
                         {isLogin ? '¿No tienes cuenta? Regístrate' : '¿Ya tienes cuenta? Inicia sesión'}
                     </button>
                 </div>
+
+                <div className="mt-8 text-center text-xs text-[var(--text-secondary)] opacity-60">
+                    Powered by Hazu 2026
+                </div>
             </div>
         </div>
     );

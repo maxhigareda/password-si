@@ -1,6 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import { KeyRound, Users, Shield, LogOut, X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabase';
 
 interface SidebarProps {
     isOpen?: boolean;
@@ -78,7 +79,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 </nav>
 
                 <div className="p-4 border-t border-[var(--border-color)]">
-                    <button className="w-full btn-secondary text-sm">
+                    <button onClick={() => supabase.auth.signOut()} className="w-full btn-secondary text-sm">
                         <LogOut className="w-4 h-4" />
                         Cerrar Sesión
                     </button>
